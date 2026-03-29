@@ -1,0 +1,59 @@
+```yaml
+version: '3.8'
+
+services:
+  frontend:
+    image: moto-form-frontend:staging
+    container_name: moto-form-frontend-staging
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=staging
+      - REACT_APP_API_URL=http://backend:3001
+      - REACT_APP_UPLOAD_MAX_SIZE=10MB
+    depends_on:
+      - backend
+    networks:
+      - moto-form-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  backend:
+    image: moto-form-backend:staging
+    container_name: moto-form-backend-staging
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=staging
+      - PORT=3001
+      - UPLOAD_PATH=/app/uploads
+      - MAX_FILE_SIZE=10485760
+      - ALLOWED_EXTENSIONS=jpg,jpeg,png,webp
+      - CORS_ORIGIN=http://localhost:3000
+    volumes:
+      - moto-uploads:/app/uploads
+    networks:
+      - moto-form-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+volumes:
+  moto-uploads:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./uploads
+
+networks:
+  moto-form-network:
+    driver: bridge
+```
